@@ -1,2 +1,2 @@
 # TickerTrade
-TickerTrade is an automated algorithmic trading app that utilizes the Alpaca API and TickerBell alert system+
+A CLI stock trading program designed to enable entering and exiting positions in a fraction of a second. Ideal for TA based scalping. TickerTrader is written entirely in Python and utilizes Alpaca API and YFinance for live data. 
