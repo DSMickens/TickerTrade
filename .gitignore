@@ -1,0 +1,10 @@
+__pycache__/
+
+# Mac Files
+.DS_Store
+
+# Testing Files
+.coverage
+
+# Password Files
+TPasswords.py
