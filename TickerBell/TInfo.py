@@ -1,8 +1,15 @@
+import alpaca_trade_api as ata
+import os
 import yfinance as yf
-import yahoo_fin.stock_info as si
-import time
+import TPasswords
+import datetime
 import sys
 import tempfile
+
+os.environ["APCA_API_KEY_ID"] = TPasswords.alpaca_key_id
+os.environ["APCA_API_SECRET_KEY"] = TPasswords.alpaca_secret_key
+os.environ["APCA_API_BASE_URL"] = TPasswords.alpaca_base_url
+api = ata.REST()
 
 def getLivePrice(ticker):
   """
@@ -12,8 +19,8 @@ def getLivePrice(ticker):
     ticker (String) - ticker for the stock to check
   """
   try:
-    return si.get_live_price(ticker)
-  except AssertionError:
+    return api.get_last_trade(ticker.upper()).price
+  except:
     print("Invalid Ticker Symbol: {0}".format(ticker))
     return None
 
@@ -25,10 +32,11 @@ def getOpenPrice(ticker):
     ticker (String) - ticker for the stock to check
   """
   try:
-    today = time.strftime("%m/%d/%y")
-    open = list(si.get_data(ticker, start_date=today).to_dict()["open"].values())[0]
-    return open
-  except AssertionError:
+    today = datetime.datetime.today()
+    stock = yf.Ticker(ticker)
+    history = stock.history(interval = "1d", start = today, end = today).values.tolist()
+    return history[0][0]
+  except:
     print("Invalid Ticker Symbol: {0}".format(ticker))
     return None
 
@@ -40,34 +48,12 @@ def getClosePrice(ticker):
     ticker (String) - ticker for the stock to check
   """
   try:
-    yesterday = time.strftime("%m/%d/%y", time.localtime(time.time() - 86400))
-    close = list(si.get_data(ticker, start_date=yesterday).to_dict()["close"].values())[0]
-    return close
+    yesterday = datetime.datetime.today() - datetime.timedelta(days = 1)
+    stock = yf.Ticker(ticker)
+    history = stock.history(interval = "1d", start = yesterday, end = yesterday).values.tolist()
+    return history[0][3]
   except AssertionError:
     print("Invalid Ticker Symbol: {0}".format(ticker))
-    return None
-
-#def getExtendedPrice(ticker):
- # ""Get and return the current days extended hours price""
-  #today = time.strftime("%Y-%m-%d")
-  #redirect output for the unneceesary download output
-  #price = yf.download(ticker, prepost=True, start=today).to_dict()
-  #print(price)
-  #return price
-
-def getData(ticker):
-  """
-  Get and return all of one stock's info data for the current day
-
-  Params
-    ticker (String) - ticker for the stock to check
-  """
-  try:
-    today = time.strftime("%m/%d/%y")
-    data = si.get_data(ticker, start_date=today).to_dict()
-    return data
-  except AssertionError:
-    print("Ticker {0} does not exist".format(ticker))
     return None
 
 def getLiveVolume(ticker):
@@ -77,50 +63,14 @@ def getLiveVolume(ticker):
   Params
     ticker (String) - ticker for the stock to check
   """
-  today = time.strftime("%m/%d/%y")
   try:
-    volume = list(si.get_data(ticker, start_date=today).to_dict()["volume"].values())[0]
-    return volume
-  except AssertionError:
-    print("Ticker {0} does not exist".format(ticker))
+    today = datetime.datetime.today()
+    stock = yf.Ticker(ticker)
+    history = stock.history(interval = "1d", start = today, end = today).values.tolist()
+    return history[0][4]
+  except:
+    print("Invalid Ticker Symbol: {0}".format(ticker))
     return None
-
-def priceHandler(inpt):
-  """
-  Handles the user input for the price command
-
-  Params:
-    inpt (string): The input line for price command
-  """
-  args = inpt.split(' ')
-  ticker = args[0]
-  if (len(args) == 2 and args[1] == "open"):
-    price = getOpenPrice(ticker)
-    if price is not None:
-      print("Price of {0} at open: {1:.4f}".format(ticker, price))
-  elif (len(args) == 2 and args[1] == "close"):
-    price = getClosePrice(ticker)
-    if price is not None:
-      print("Price of {0} at previous close: {1:.4f}".format(ticker, price))
-  elif (len(args) == 1):
-    price = getLivePrice(ticker)
-    if price is not None:
-      print("Price of {0}: {1:.4f}".format(ticker, price))
-  else:
-    print("Invalid price arguments: {0}".format(inpt))
-
-def volumeHandler(inpt):
-  """
-  Handles the user input for the volume command
-
-  Params:
-    inpt (String): The input line for volume command
-  """
-  args = inpt.split(' ')
-  ticker = args[0]
-  volume = getLiveVolume(ticker)
-  if volume is not None:
-    print("Volume of {0}: {1:,}".format(ticker, volume))
 
 def handleInfo(inpt):
   """
@@ -132,15 +82,28 @@ def handleInfo(inpt):
   """
   args = inpt.split(' ')
   cmd = args[0]
-
-  if (cmd == "price"):
-    priceHandler(inpt[6:])
-  elif (cmd == "volume"):
-    volumeHandler(inpt[7:])
-  elif (cmd == "data"):
-    data = getData(inpt[5:])
-    if data is not None:
-      print(data)
+  params = args[1:]
+  if (cmd.lower() == "price"):
+    ticker = params[0]
+    if (len(params) == 2 and params[1].lower() == "open"):
+      price = getOpenPrice(ticker)
+      if price is not None:
+        print("Price of {0} at open: {1:.4f}".format(ticker, price))
+    elif (len(params) == 2 and params[1].lower() == "close"):
+      price = getClosePrice(ticker)
+      if price is not None:
+        print("Price of {0} at previous close: {1:.4f}".format(ticker, price))
+    elif (len(params) == 1):
+      price = getLivePrice(ticker)
+      if price is not None:
+        print("Price of {0}: {1:.4f}".format(ticker, price))
+    else:
+      print("Invalid price arguments: {0}".format(inpt))
+  elif (cmd.lower() == "volume"):
+    ticker = params[0]
+    volume = getLiveVolume(ticker)
+    if volume is not None:
+        print("Volume of {0}: {1:,}".format(ticker, volume))
   else:
     print("Invalid Info Command: {0}".format(cmd))
     return -1

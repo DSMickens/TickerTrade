@@ -1,5 +1,5 @@
-import yfinance as yf
-import yahoo_fin.stock_info as si
+import alpaca_trade_api as ata
+import os
 import multiprocessing
 import time
 import sys
@@ -10,6 +10,12 @@ import TIO
 import TInfo
 import TRemote
 import TConfig
+import TPasswords
+
+os.environ["APCA_API_KEY_ID"] = TPasswords.alpaca_key_id
+os.environ["APCA_API_SECRET_KEY"] = TPasswords.alpaca_secret_key
+os.environ["APCA_API_BASE_URL"] = TPasswords.alpaca_base_url
+api = ata.REST()
 
 def usage():
   """returns all usages of TickerBell"""
@@ -22,8 +28,7 @@ def usage():
       alert start/stop
       alert mode cli/email/text [on/off]
       alert email add/remove [address]
-      alert phone add/remove [phone number] [carrier (spaces removed)]
-      info data [ticker]
+      alert phone add/remove [phone number] [carrier]
       info price [ticker] open/close (optional)
       info volume [ticker]
       io import/export [filename]
@@ -31,12 +36,12 @@ def usage():
       position remove [ticker]
       position print
       position status [ticker] (optional)
-      remote on/off 
-      help
+      remote on/off
+      help (more info about each command)
       usage
       quit
   """)
-  
+
 def help():
   """returns help functions for all commands"""
   return("""
@@ -81,7 +86,7 @@ def help():
           add/remove    - whether you want to save or delete a saved phone number
           phone number  - the phone number to save or delete
           carrier       - the service carrier for the phone number with all spaces removed
-  
+
   INFO:\n
       The info command lets you get some info about specified stocks
   \n    PRICE\n
@@ -90,7 +95,7 @@ def help():
           ticker - the ticker symbol of the stock to check
           open/close/extended - optional. If given, the price at the most recent open,
                                 close, or current extended hours price will be given.
-          diff - optional. Will show the difference between the chosen price and the price 
+          diff - optional. Will show the difference between the chosen price and the price
                  at the most recent open.
         VOLUME\n
           volume lets you get volume information for a stock
@@ -98,7 +103,7 @@ def help():
           ticker - the ticker symbol of the stock to check.
           average - optional. Will return the average volume for this stock instead
                     of the current day's volume.
-  
+
   IO:\n
       The io command lets you manage input/output with files
   \n    IMPORT/EXPORT\n
@@ -128,7 +133,7 @@ def help():
       The remote command lets you toggle on and off the remote access functionality.
       It requires one parameter.\n
       on/off - whether you want the remote functionality to be enabled or disabled.
-        
+
   USAGE:\n
       The usage commands gives a format for how to use each of the other commands.
 
@@ -137,18 +142,19 @@ def help():
   """)
 
 def Banner():
-  """returns the TickerBell welcome banner""" 
+  """returns the TickerBell welcome banner"""
   return("""
-           __________                          _____               
-          |___    ___|                        |  _  \        _  _  
-              |  | _   ___  _  __  ____   ___ | | | |  ____ | || | 
-              |  ||_| / __|| |/ / / _  \ /   \| |_| / / _  \| || | 
-              |  | _ | |   |   / | |_| || ||_||  _ | | |_| || || | 
-              |  || || |   |   \ | ____|| |   | | | \| ____|| || | 
-              |  || || |__ | |\ \| \___ | |   | |_| || \___ | || | 
-              |__||_| \___||_| \_\\\____||_|   |_____/ \____||_||_|  
+           __________                          _____
+          |___    ___|                        |  _  \        _  _
+              |  | _   ___  _  __  ____   ___ | | | |  ____ | || |
+              |  ||_| / __|| |/ / / _  \ /   \| |_| / / _  \| || |
+              |  | _ | |   |   / | |_| || ||_||  _ | | |_| || || |
+              |  || || |   |   \ | ____|| |   | | | \| ____|| || |
+              |  || || |__ | |\ \| \___ | |   | |_| || \___ | || |
+              |__||_| \___||_| \_\\\____||_|   |_____/ \____||_||_|
+                                                                    by Danny Mickens
   """)
-  
+
 def checkQueue():
   """checkQueue continuously checks the queue for new messages"""
   while (1):
@@ -165,13 +171,13 @@ def checkQueue():
 def handleInput(inpt):
   """
   handles the user input line for stdin or from a file
-  
+
   Params:
     inpt (String): user input line
     Return: fails if line can't be read in
   """
   args = inpt.split(' ')
-  cmd = args[0]
+  cmd = args[0].lower()
 
   if ( cmd == "alert" ):
     if (TAlert.handleAlert(inpt[6:]) == -1):
@@ -194,18 +200,18 @@ def handleInput(inpt):
       print(usage())
   elif ( cmd != "quit" ):
     print("Invalid TickerBell Command: {0}".format(cmd))
-    print(usage())
+    print("Type usage to see available commands!")
     return -1
-    
+
 def main():
-  try:
+  #try:
     t = threading.Thread(target=checkQueue)
     t.daemon=True
     t.start()
             # Introduction Banner
     print(Banner())
             # Usage Report
-    print(usage())
+    print("Type usage to see available commands!")
             # Input Prompt
     print(">> ", end = ' ')
             # Initial Input Received
@@ -220,11 +226,11 @@ def main():
       inpt = input().strip()
             #Exit Message
     print("\nThank you for using TickerBell\n")
-    return 0  
-  except:
-    type, value, traceback = sys.exc_info()
-    print(type, value, traceback)
-    return 1
+    return 0
+  #except:
+    #type, value, traceback = sys.exc_info()
+    #print(type, value, traceback)
+    #return 1
 if __name__ == "__main__":
     # execute only if run as a script
     exit(main())

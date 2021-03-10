@@ -1,5 +1,6 @@
 import yfinance as yf
-import yahoo_fin.stock_info as si
+import alpaca_trade_api as ata
+import os
 import smtplib
 import ssl
 import TickerBell
@@ -8,8 +9,12 @@ from time import sleep, time
 from random import seed
 from random import randint
 import TPasswords
-from
 import TConfig
+
+os.environ["APCA_API_KEY_ID"] = TPasswords.alpaca_key_id
+os.environ["APCA_API_SECRET_KEY"] = TPasswords.alpaca_secret_key
+os.environ["APCA_API_BASE_URL"] = TPasswords.alpaca_base_url
+api = ata.REST()
 
 #globals
 alertProcess = None
@@ -28,13 +33,12 @@ def sendEmail(message, receiver):
     message is the email body
     receiver is the email address to send to
   """
-  receiver = '9198969566@vtext.com'
   #set up server for email/text message
   port = 465
   password = 'T1ck3rB3ll'
   context = ssl.create_default_context()
   with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-    server.login(TPasswords.tickerbell_email, TPasswords.tickerbell_password)
+    server.login(TPasswords.tickerbell_email, TPasswords.tickerbell_email_pw)
     server.sendmail(TPasswords.tickerbell_email, receiver, message)
 
 def checkAlerts(q):
@@ -66,6 +70,16 @@ def checkAlerts(q):
       """.format(ticker, price)
       print(message)
       print(">>", end = ' ')
+    #send out text alert to each number
+    if (mode["text"]):
+      message ="""
+      You have 1 new TickerBell Alert!
+
+      Ticker: {0}
+      Price: ${1:.4f}
+      """.format(ticker, price)
+      for number in phoneNumbers:
+        sendEmail(message, number)
     #send out email alert to each email
     if (mode["email"]):
       message = """\
@@ -78,16 +92,7 @@ def checkAlerts(q):
       """.format(ticker, price)
       for email in emails:
         sendEmail(message, email)
-    #send out text alert to each number
-    if (mode["text"]):
-      message ="""
-      You have 1 new TickerBell Alert!
 
-      Ticker: {0}
-      Price: ${1:.4f}
-      """.format(ticker, price)
-      for number in phoneNumbers:
-        sendEmail(message, number)
   global alerts
   curtime = time()
   while (True):
@@ -99,7 +104,7 @@ def checkAlerts(q):
       alertIsOn = value[3]
 
       if alertIsOn:
-        price = si.get_live_price(ticker)
+        price = api.get_last_trade(ticker.upper()).price
         if alertIsLess:
           if (float("{:.4f}".format(price)) <= alertPrice):
             printAlert(ticker, price)
@@ -168,7 +173,7 @@ def createAlert(inpt):
   #default arguments
   isLess = True
   isOn = True
-  
+
   #if number of arguments is not in the acceptable range of arguments, fail
   if (len(args) > 4 or len(args) < 2):
     print("Invalid number of input arguments: {0}".format(len(args)))
@@ -276,11 +281,13 @@ def setPhone(inpt):
     inpt (String): User input containing the add/remove specifier, the phone number, and the carrier
   """
   global carriers
+  global phoneNumbers
+
   args = inpt.split(' ')
   addOrRemove = args[0]
   try:
-    number = args[1]
-    carrier = carriers[args[2]]
+    number = int(args[1])
+    carrier = carriers[args[2].lower()]
   except ValueError:
     print("Invalid number: ".format(args[1]))
     return
@@ -291,7 +298,7 @@ def setPhone(inpt):
     print("Invalid number of arguments: {0}".format(args.len()))
     return
   if (addOrRemove == "add"):
-    phoneNumbers.append(number + carrier)
+    phoneNumbers.append(str(number) + carrier)
   elif (addOrRemove == "remove"):
     try:
       phoneNumbers.remove(number + carrier)

@@ -8,3 +8,7 @@ __pycache__/
 
 # Password Files
 TPasswords.py
+
+# Local io Files
+infile*.txt
+outfile*.txt
