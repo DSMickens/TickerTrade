@@ -23,7 +23,6 @@ def handleEmailAttachment(filename):
   Return:
     a list of commands
   """
-  print("handling email attachment")
   if not filename.endswith('.txt'):
     return None
   commands = []
@@ -46,9 +45,10 @@ def checkEmail(q):
       return
 
     #get IDs of unread emails and put into a list named IDs
-    #IDs SHOULD be in order oldest to newest I BELIEVE
+    #IDs SHOULD be in order oldest to newest
     status, IDs = imap.search(None, 'UnSeen')
     IDs = IDs[0].split()
+    if len(IDs) > 0:
     for i, ID in enumerate(IDs):
       #IDs is now a list of ID strings
       IDs[i] = ID.decode('utf-8')
@@ -71,10 +71,11 @@ def checkEmail(q):
             from_ = msg.get("From")
             from_ = from_.split()
             from_ = from_[len(from_)-1].strip('<>')
-            number = from_.split('@')[0]
+            return_username = from_.split('@')[0]
+            address = from_.split('@')[1]
             #AUTHORIZING RECIPIENT
-            if from_ not in TAlert.emails:
-              if number not in '/t'.join(TAlert.phoneNumbers):
+            if from_ not in TAlert.emails and from_ not in TAlert.phoneNumbers:
+                print("Email sender {0} invalid personnel".format(from_))
                 break
             commands = []
             if msg.is_multipart():
@@ -100,6 +101,7 @@ def checkEmail(q):
                       # download attachment and save it
                       open(filepath, "wb").write(part.get_payload(decode=True))
                       commands = handleEmailAttachment(filename)
+                      os.remove(filepath)
             else:
               # extract content type of email
               content_type = msg.get_content_type()
@@ -118,15 +120,14 @@ def checkEmail(q):
               elif command not in ["alert start", "remote on", "quit"]:
                 TickerBell.handleInput(command)
             sys.stdout = old_stdout
-            for phone in TAlert.phoneNumbers:
-              if number in phone:
-                receiver = number
             message = mystdout.getvalue()
-            print(message)
-            for i in range(0, int(len(message) / 160)):
-              start = i * 160
-              end = start + 159
-              TAlert.sendEmail(message[start:end], receiver)
+            if from_ in TAlert.emails:
+                TAlert.sendEmail(message, receiver)
+            else:
+              for i in range(0, int(len(message) / 160)):
+                start = i * 160
+                end = start + 159
+                TAlert.sendEmail(message[start:end], from_)
     sleep(2)
   imap.close()
   imap.logout()

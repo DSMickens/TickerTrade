@@ -25,6 +25,8 @@ phoneNumbers = []
 carriers = {"xfinity":"@vtext.com","verizon":"@vtext.com", "at&t":"@txt.att.net",
             "tmobile":"tmomail.net", "sprint":"@messaging.sprintpcs.com",
             "googlefi":"@msg.fi.google.com"}
+carriers_mms = {"xfinity": "@mypixmessages.com", "verizon":"@vzwpix.com", "at&t":"@mms.att.net",
+            "tmobile":"@tmomail.net", "sprint":"@pm.sprint.com", "googlfi":"@msg.fi.google.com"}
 def sendEmail(message, receiver):
   """
   sends a message from tickerbell email to a receiver
@@ -287,7 +289,8 @@ def setPhone(inpt):
   addOrRemove = args[0]
   try:
     number = int(args[1])
-    carrier = carriers[args[2].lower()]
+    sms_carrier = carriers[args[2].lower()]
+    mms_carrier = carriers_mms[args[2].lower()]
   except ValueError:
     print("Invalid number: ".format(args[1]))
     return
@@ -298,10 +301,12 @@ def setPhone(inpt):
     print("Invalid number of arguments: {0}".format(args.len()))
     return
   if (addOrRemove == "add"):
-    phoneNumbers.append(str(number) + carrier)
+    phoneNumbers.append(str(number) + sms_carrier)
+    phoneNumbers.append(str(number) + mms_carrier)
   elif (addOrRemove == "remove"):
     try:
-      phoneNumbers.remove(number + carrier)
+      phoneNumbers.remove(str(number) + sms_carrier)
+      phoneNumbers.remove(str(number) + mms_carrier)
     except ValueError:
       print("That phone number has not been saved")
       return
@@ -361,9 +366,13 @@ def printer(inpt):
   def printPhoneNumbers():
     """Prints currently saved phone numbers"""
     global phoneNumbers
+    unique_numbers = []
     for phone in phoneNumbers:
       number = phone.split('@')
-      print(number[0])
+      if number[0] not in unique_numbers:
+          unique_numbers.append(number[0])
+    for number in unique_numbers:
+      print(number)
 
   if (inpt == "alerts"):
     printAlerts()
