@@ -1,0 +1,14 @@
+__pycache__/
+
+# Mac Files
+.DS_Store
+
+# Testing Files
+.coverage
+
+# Password Files
+TPasswords.py
+
+# Local io Files
+infile*.txt
+outfile*.txt
