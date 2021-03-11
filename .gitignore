@@ -12,3 +12,7 @@ TPasswords.py
 # Local io Files
 infile*.txt
 outfile*.txt
+
+# Local webpage images
+/charts/*/*.txt
+daily_pl.png
