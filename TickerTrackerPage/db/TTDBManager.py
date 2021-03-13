@@ -2,21 +2,30 @@ import mysql.connector as mc
 from sampleData import sampleData
 import datetime
 import os
+import sys
 import yfinance as yf
 import alpaca_trade_api as ata
+sys.path.append('/Users/Danny/git/Ticker-Projects')
+import TPasswords
 
 #PAPER
 #"""
-os.environ["APCA_API_KEY_ID"] = "PKG32JKZMEMLSXXH9PB8"
-os.environ["APCA_API_SECRET_KEY"] = "XTwtkBttcfd8rf6GPiXl1GLfyLfzNYJ8GCMFIWkY"
-os.environ["APCA_API_BASE_URL"] = "https://paper-api.alpaca.markets"
+os.environ["APCA_API_KEY_ID"] = TPasswords.alpaca_key_id_paper
+os.environ["APCA_API_SECRET_KEY"] = TPasswords.alpaca_secret_key_paper
+os.environ["APCA_API_BASE_URL"] = TPasswords.alpaca_base_url_paper
 #"""
+#LIVE
+"""
+os.environ["APCA_API_KEY_ID"] = TPasswords.alpaca_key_id_live
+os.environ["APCA_API_SECRET_KEY"] = TPasswords.alpaca_secret_key_live
+os.environ["APCA_API_BASE_URL"] = TPasswords.alpaca_base_url_live
+"""
 api = ata.REST()
 
 connection=mc.connect(
-    host="localhost",
-    user="root",
-    password = "Ch@rgers963!"
+    host=TPasswords.db_host,
+    user=TPasswords.db_user,
+    password =TPasswords.db_password
     )
 
 staged_db_rows = {}
